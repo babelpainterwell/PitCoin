@@ -13,7 +13,7 @@ type TxOut struct {
 }
 
 type Transaction struct {
-	Version int32 
+	Version uint32 
 	TxIns []TxIn
 	TxOuts []TxOut 
 	LockTime uint32

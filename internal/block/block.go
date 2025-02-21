@@ -24,6 +24,7 @@ type BlockHeader struct {
 func (bh *BlockHeader) SerializeHeader() []byte {
 	// serialize the block header
 
+	// to avoid memory allocation, we use a bytes.Buffer to store the serialized data
 	var buf bytes.Buffer
 
 	// serialization of all fields
@@ -86,6 +87,10 @@ func (b *Block) ComputeMerkleRoot() [32]byte {
 	copy(root[:], level[0])
 
 	return root
+}
+
+func (b *Block) UpdateMerkleRoot() {
+	b.Header.MerkleRoot = b.ComputeMerkleRoot()
 }
 
 
