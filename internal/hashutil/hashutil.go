@@ -36,6 +36,9 @@ func EncodeUint32LE(buf *bytes.Buffer, n uint32) {
 // other encoding helper functions for uint64, int64, int32
 //
 func EncodeInt32LE(buf *bytes.Buffer, n int32) {
+	// write to the buffer in little-endian format, 
+	// equivalent to adding the bytes to the buffer in reverse order
+	
 	_ = binary.Write(buf, binary.LittleEndian, n)
 }
 

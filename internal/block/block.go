@@ -17,7 +17,7 @@ type BlockHeader struct {
 	PrevBlockHash [32]byte 
 	MerkleRoot    [32]byte 
 	Timestamp     uint32 
-	Target        uint32 
+	Target        uint32 // ???
 	Nonce         uint32 
 }
 
@@ -28,10 +28,12 @@ func (bh *BlockHeader) SerializeHeader() []byte {
 	var buf bytes.Buffer
 
 	// serialization of all fields
-	//
-	//
-	//
-	//
+	hashutil.EncodeUint32LE(&buf, bh.Version)
+	buf.Write(bh.PrevBlockHash[:])
+	buf.Write(bh.MerkleRoot[:])
+	hashutil.EncodeUint32LE(&buf, bh.Timestamp)
+	hashutil.EncodeUint32LE(&buf, bh.Target)
+	hashutil.EncodeUint32LE(&buf, bh.Nonce)
 
 	return buf.Bytes()
 }
