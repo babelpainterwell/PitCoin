@@ -1,28 +1,25 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
-	"testing"
+	"time"
+
+	"github.com/babelpainterwell/shitcoin/internal/block"
 )
 
-// func BenchmarkByteSlice(b *testing.B) {
-//     var data []byte
-//     for i := 0; i < b.N; i++ {
-//         data = append(data, make([]byte, 1000)...)
-//     }
-// }
-
-func BenchmarkByteBuffer(b *testing.B) {
-    var buf bytes.Buffer
-    for i := 0; i < b.N; i++ {
-        buf.Write(make([]byte, 1000))
-		fmt.Printf("%d\n", buf.Available())
-    }
-}
-
 func main() {
-    // Run both in the same process
-    // fmt.Println(testing.Benchmark(BenchmarkByteSlice))
-    fmt.Println(testing.Benchmark(BenchmarkByteBuffer))
+   
+	var blockHeader block.BlockHeader
+
+	blockHeader.Version = 1
+	blockHeader.Timestamp = uint32(time.Now().Unix())
+
+	// serialize it using little-endian encoding
+	serializedHeader := blockHeader.SerializeHeader()
+	fmt.Println(serializedHeader)
+
+	// serialize it using big-endian encoding
+	// serializedHeaderBE := blockHeader.SerializeHeaderBE()
+	// fmt.Println(serializedHeaderBE)
+
 }
