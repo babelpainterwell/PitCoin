@@ -21,10 +21,9 @@ func DoubleSha256(data []byte) [32]byte {
 }
 
 // to compute a Merkle node, two 32-byte hashes are concatenated and hashed together.
-func DoubleSha256Concat(first, second []byte) []byte {
-	concat := append(first, second...)
-	result := DoubleSha256(concat)
-	return result[:]
+func DoubleSha256Concat(first, second [32]byte) [32]byte {
+	concat := append(first[:], second[:]...)
+	return DoubleSha256(concat)
 }
 
 //

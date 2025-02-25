@@ -67,16 +67,13 @@ func (b *Block) ComputeMerkleRoot() [32]byte {
 		return [32]byte{}
 	}
 
-	// 2. Convert the transaction IDs to a slice of byte slices
-	level := make([][]byte, 0, len(txIDs))
-	for _, txID := range txIDs {
-		sliceOfTxID := txID[:]
-		level = append(level, sliceOfTxID)
-	}
+	// 2. 
+	level := make([][32]byte, 0, len(txIDs))
+	level = append(level, txIDs...)
 
 	// 3. Build the tree until we are only left with one root 
 	for len(level) > 1 {
-		var newLevel [][]byte 
+		var newLevel [][32]byte 
 		for i := 0; i < len(level); i += 2 {
 			// if we have an odd number transactions in current level, we repeat the last one 
 			if i + 1 == len(level) {
@@ -88,15 +85,81 @@ func (b *Block) ComputeMerkleRoot() [32]byte {
 		level = newLevel
 	}
 
-	var root [32]byte 
-	copy(root[:], level[0])
-
-	return root
+	return level[0]
 }
 
 func (b *Block) UpdateMerkleRoot() {
 	b.Header.MerkleRoot = b.ComputeMerkleRoot()
 }
+
+func (b *Block) RequestMerklePath(txIndex uint32) ([][32]byte, error) {
+	// request the merkle path from the miner
+	// the miner will return the merkle path in the form of a slice of 32-byte arrays
+	// the merkle path is the sibling nodes of the transaction ID in the merkle tree
+	// the merkle path is used to verify the transaction in the block
+
+	mp := make([][32]byte, 0)
+	
+
+
+	return mp, nil 
+}
+
+
+func (b *Block) GetTxIndex(txID [32]byte) (uint32, error) {
+	// check if the transaction ID is in the block 
+	// find its index in the block 
+	txIndex := uint32(len(b.Transactions))
+	for i, tx := range b.Transactions {
+		if tx.GetTxID() == txID {
+			txIndex = uint32(i)
+		}
+	}
+	if txIndex == uint32(len(b.Transactions)) {
+		fmt.Println("Transaction not found in the block")
+		return 0, fmt.Errorf("transaction not found in the block")
+	}
+	return txIndex, nil
+	
+}
+
+func (b *Block) VeirifyTransaction(txID [32]byte) (bool, error) {
+	// verify the transaction in the block
+	txIndex, err := b.GetTxIndex(txID)
+	if err != nil {
+		return false, err
+	}
+	
+	// request for merkle path from the miner
+	merklePath, err := b.RequestMerklePath(txIndex)
+	if err != nil {
+		return false, err
+	}
+
+	// verify the merkle path, they should be equal to the merkle root of the block
+	currentHash := txID
+
+	// if the merkle path is empty, the transaction is the only one in the block
+	if len(merklePath) == 0 {
+		return currentHash == b.Header.MerkleRoot, nil
+	}
+
+	for i, siblingHash := range merklePath {
+		// update the isRightChild flag
+		isRightChild := (txIndex & (1 << i)) != 0
+
+		if isRightChild {
+			currentHash = hashutil.DoubleSha256Concat(siblingHash, currentHash)
+		} else {
+			currentHash = hashutil.DoubleSha256Concat(currentHash, siblingHash)
+		}
+
+		
+	}
+	return currentHash == b.Header.MerkleRoot, nil
+	
+}
+
 
 func (b *Block) Mine() {
 	// the mining is successful once a nonce making the hash of the block header less than the target is found 
@@ -126,8 +189,8 @@ func (b *Block) Mine() {
 	}
 
 	fmt.Println("Mining failed Due to Time Limit -- 600 seconds")
-
 }
+
 
 
 
