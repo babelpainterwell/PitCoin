@@ -92,15 +92,58 @@ func (b *Block) UpdateMerkleRoot() {
 	b.Header.MerkleRoot = b.ComputeMerkleRoot()
 }
 
-func (b *Block) RequestMerklePath(txIndex uint32) ([][32]byte, error) {
-	// request the merkle path from the miner
-	// the miner will return the merkle path in the form of a slice of 32-byte arrays
-	// the merkle path is the sibling nodes of the transaction ID in the merkle tree
+func (b *Block) RequestMerklePath(txIndex uint32) ([]MerklePathItem, error) {
 	// the merkle path is used to verify the transaction in the block
 
-	mp := make([][32]byte, 0)
-	
+	var mp []MerklePathItem
 
+	txIDs := make([][32]byte, 0, len(b.Transactions))
+	for _, tx := range b.Transactions {
+		txIDs = append(txIDs, tx.GetTxID())
+	}
+
+	// txIndex out of range
+	if txIndex >= uint32(len(txIDs)) {
+		return mp, fmt.Errorf("transaction index out of range")
+	}
+
+	// if txIndex is zero and only one transaction, the merkle path is empty
+	if txIndex == 0 && len(txIDs) == 1 {
+		return mp, nil
+	}
+
+	level := make([][32]byte, 0, len(txIDs))
+	level = append(level, txIDs...)
+
+	// store the sibling nodes of the transaction ID in the merkle path
+	for (len(level) > 1) {
+		var newLevel [][32]byte
+		for i := 0; i < len(level); i += 2 {
+			var left, right [32]byte 
+			left = level[i]
+			if i + 1 < len(level) {
+				right = level[i + 1]
+			} else {
+				// if odd number, duplicate the last one 
+				right = left 
+			}
+
+			newLevel = append(newLevel, hashutil.DoubleSha256Concat(left, right))
+
+			// if the txIndex is in this pair, record its sibling 
+			if txIndex >= uint32(i) && txIndex < uint32(i + 2) {
+				if txIndex == uint32(i) {
+					// sibling is the right 
+					mp = append(mp, MerklePathItem{Hash: right, IsLeft: false})
+				} else {
+					// sibling is the left
+					mp = append(mp, MerklePathItem{Hash: left, IsLeft: true})
+				}
+			}
+		}
+		level = newLevel
+		txIndex /= 2 
+	}
 
 	return mp, nil 
 }
@@ -116,18 +159,17 @@ func (b *Block) GetTxIndex(txID [32]byte) (uint32, error) {
 		}
 	}
 	if txIndex == uint32(len(b.Transactions)) {
-		fmt.Println("Transaction not found in the block")
-		return 0, fmt.Errorf("transaction not found in the block")
+		return 0, fmt.Errorf("error to find transaction ID in the block")
 	}
 	return txIndex, nil
 	
 }
 
-func (b *Block) VeirifyTransaction(txID [32]byte) (bool, error) {
+func (b *Block) VerifyTransaction(txID [32]byte) (bool, error) {
 	// verify the transaction in the block
 	txIndex, err := b.GetTxIndex(txID)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("error to verify transaction; %v", err)
 	}
 	
 	// request for merkle path from the miner
@@ -144,17 +186,12 @@ func (b *Block) VeirifyTransaction(txID [32]byte) (bool, error) {
 		return currentHash == b.Header.MerkleRoot, nil
 	}
 
-	for i, siblingHash := range merklePath {
-		// update the isRightChild flag
-		isRightChild := (txIndex & (1 << i)) != 0
-
-		if isRightChild {
-			currentHash = hashutil.DoubleSha256Concat(siblingHash, currentHash)
+	for _, item := range merklePath {
+		if item.IsLeft {
+			currentHash = hashutil.DoubleSha256Concat(item.Hash, currentHash)
 		} else {
-			currentHash = hashutil.DoubleSha256Concat(currentHash, siblingHash)
+			currentHash = hashutil.DoubleSha256Concat(currentHash, item.Hash)
 		}
-
-		
 	}
 	return currentHash == b.Header.MerkleRoot, nil
 	

@@ -26,6 +26,10 @@ type Transaction struct {
 	Version uint32
 	Marker  uint8
 	Flag    uint8
+	TxInCount uint32
+	TxIn []*TxInput
+	TxOutCount uint32
+	TxOut []*TxOutput
 }
 
 func (tx *Transaction) SerializeTransaction() []byte {
@@ -36,6 +40,8 @@ func (tx *Transaction) SerializeTransaction() []byte {
 	//
 	//
 	//
+	hashutil.EncodeUint32LE(&buf, tx.Version)
+	
 
 	return buf.Bytes()
 }
