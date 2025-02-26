@@ -6,6 +6,8 @@ import (
 	"github.com/babelpainterwell/shitcoin/internal/hashutil"
 )
 
+// In terms of tracking orevious outputs, Bitcoin Core keeps a database that stores every UTXO and essential metadata about it.
+
 type TxInput struct {
 	OutpointTxID [32]byte // transaction ID where the funding should be spent
 	OutputIndex uint32 // index of the output in the transaction
