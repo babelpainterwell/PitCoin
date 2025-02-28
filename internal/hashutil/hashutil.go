@@ -72,6 +72,22 @@ func EncodeInt64BE(buf *bytes.Buffer, n int64) {
 	_ = binary.Write(buf, binary.BigEndian, n)
 }
 
+func EncodeUint16LE(buf *bytes.Buffer, n uint16) {
+	_ = binary.Write(buf, binary.LittleEndian, n)
+}
+
+func EncodeUint16BE(buf *bytes.Buffer, n uint16) {
+	_ = binary.Write(buf, binary.BigEndian, n)
+}
+
+func EncodeInt16LE(buf *bytes.Buffer, n int16) {
+	_ = binary.Write(buf, binary.LittleEndian, n)
+}
+
+func EncodeInt16BE(buf *bytes.Buffer, n int16) {
+	_ = binary.Write(buf, binary.BigEndian, n)
+}
+
 
 //
 // function to return a reversed copy of byte slice for endianess conversion

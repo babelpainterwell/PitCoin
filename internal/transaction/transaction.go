@@ -8,13 +8,17 @@ import (
 
 // In terms of tracking orevious outputs, Bitcoin Core keeps a database that stores every UTXO and essential metadata about it.
 
+
 type TxInput struct {
 	OutpointTxID 	[32]byte // transaction ID where the funding should be spent
 	OutputIndex 	uint32 // index of the output in the transaction
 	InputScript 	[]byte // ??? scriptSig (for legacy or P2SH spends; empty for native segwit)
-	Sequence 		uint32 // sequence number
+	Sequence 		uint32 // sequence number, as a relative timelock or still for replacement signalling?
 	Witness   		[][]byte // witeness stack
 }
+
+
+// don't we need to track the output index?
 
 type TxOutput struct {
 	Amount 			uint64 // amount of shitcoins
@@ -36,6 +40,22 @@ type Transaction struct {
 	LockTime uint32 // lock time field
 }
 
+
+func writeVarInt(buf *bytes.Buffer, value uint64) {
+	switch {
+	case value < 0xfd:
+		buf.WriteByte(byte(value))
+	case value <= 0xffff:
+		buf.WriteByte(0xfd)
+		hashutil.EncodeUint16LE(buf, uint16(value))
+	case value <= 0xffffffff:
+		buf.WriteByte(0xfe)
+		hashutil.EncodeUint32LE(buf, uint32(value))
+	default:
+		buf.WriteByte(0xff)
+		hashutil.EncodeUint64LE(buf, value)
+	}
+}
 
 // returns true if any input contains witness data
 func (tx *Transaction) isSegwit() bool {
