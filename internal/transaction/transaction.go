@@ -2,6 +2,7 @@ package transaction
 
 import (
 	"bytes"
+	"encoding/binary"
 
 	"github.com/babelpainterwell/shitcoin/internal/hashutil"
 )
@@ -73,11 +74,20 @@ func (tx *Transaction) SerializeTransaction() []byte {
 	// serialize the transaction
 	var buf bytes.Buffer
 
-	// serialization of all fields
-	//
-	//
-	//
-	hashutil.EncodeUint32LE(&buf, tx.Version)
+	// Write the version 
+	binary.Write(&buf, binary.LittleEndian, tx.Version)
+
+	isSegwit := tx.isSegwit()
+
+	if isSegwit {
+		// write marker and flag for segwit
+		// per current P2P protocol, marker must be 0x00 and flag must be 0x01
+		if tx.Marker != 0x00 || tx.Flag != 0x01 {
+			panic("invalid marker and flag for segwit transaction")
+		}
+		buf.WriteByte(tx.Marker)
+		buf.WriteByte(tx.Flag)
+	}
 	
 
 	return buf.Bytes()
