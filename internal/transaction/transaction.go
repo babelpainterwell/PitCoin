@@ -58,6 +58,12 @@ func writeVarInt(buf *bytes.Buffer, value uint64) {
 	}
 }
 
+// write a variable length byte slice to the buffer prefixed with a compactSize length
+func writeVarBytes(buf *bytes.Buffer, data []byte) {
+	writeVarInt(buf, uint64(len(data)))
+	buf.Write(data)
+}
+
 // returns true if any input contains witness data
 func (tx *Transaction) isSegwit() bool {
 	for _, in := range tx.TxIns {
